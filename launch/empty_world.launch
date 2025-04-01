@@ -1,0 +1,43 @@
+<launch>
+  <!-- Tai tham so va Gazebo -->
+  <rosparam command="load" file="$(find myrobot)/config/arm_controller.yaml"/>
+  <rosparam command="load" file="$(find myrobot)/config/base_controller.yaml"/>
+  <param name="/use_sim_time" value="true"/>
+
+  <!-- Khoi dong Gazebo -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find myrobot)/worlds/myworld.world"/>
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+  <!-- Spawn model vao Gazebo -->
+  <param name="robot_description" textfile="$(find myrobot)/urdf/myrobot.urdf"/>
+  <node name="spawn_model" pkg="gazebo_ros" type="spawn_model" 
+        args="-urdf -model myrobot -param robot_description"/>
+
+  <!-- Run robot_state_publisher va joint_state_publisher -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+
+  <!-- Khoi dong controller -->
+  <node name="arm_controller_spawner" pkg="controller_manager" type="spawner"
+        respawn="true" output="screen"
+        args="joint1_position_controller
+              joint2_position_controller"/>
+
+  <node name="base_controller_spawner" pkg="controller_manager" type="spawner"
+        respawn="true" output="screen"
+        args="joint_state_controller
+              diff_drive_controller"/>
+
+  <!-- Khoi dong Rviz -->
+  <node pkg="rviz" type="rviz" name="rviz" args="-f base_link -d $(find myrobot)/rviz/myrobot.rviz">
+    <param name="robot_model" value="/robot_description"/>
+     </node>
+      <!-- Them node dieu khien -->
+  <node name="keyboard_node" pkg="myrobot" type="keyboard.py" output="screen" />
+</launch>
